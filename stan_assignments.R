@@ -64,6 +64,16 @@ stan_guesser <- function(isotope_choice, mix_choice, match_choice, area_choice, 
   }
 }
 
+# pmppm()
+# Takes in a mass and produces a ppm window, lower bound of 200m/z = 0.002 Da
+pmppm <- function(mass, ppm=4){
+  if(mass<200){
+    as.numeric(mass)+(c(-ppm, ppm)*200/1000000)
+  } else {
+    c(mass*(1-ppm/1000000), mass*(1+ppm/1000000))
+  }
+}
+
 
 
 # Read in data ----
