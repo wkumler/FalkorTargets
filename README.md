@@ -33,3 +33,6 @@ correct files if you'd like to use this
 ### Output
 
 **stan_vis.html**: A knit document with plotted peaks and associated metadata
+
+## Regina comments ##
+I like your layout of Scripts, data, output. I might clarify whether things need to be run in a particular order, or if they can just be run independently than I would mention that too.
