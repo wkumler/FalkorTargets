@@ -3,7 +3,8 @@ title: "Falkor standard visualization"
 author: "William Kumler"
 output: html_document
 ---
-
+Add some more documentation! Why have you chosen to split the R chunks were you did? What is your function doing?
+What should be produced by this?
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
@@ -17,7 +18,9 @@ pmppm <- function(mass, ppm=4){
   }
 }
 all_stans <- read.csv("falkor_stans.csv") %>% 
-  filter(polarity=="pos") %>% filter(!is.na(mix)) %>%
+  filter(polarity=="pos",
+         !is.na(mix)) %>% # if you're doing multiple steps of the same dplyr operation, just combine them
+  # into one for clarity and less code.
   arrange(as.numeric(mz), as.numeric(rt)) %>%
   mutate(mz=as.numeric(mz))
 stan_MS1_data <- readRDS("stan_data.rds")
@@ -66,6 +69,8 @@ for(mz_i in as.numeric(unique(all_stans$mz))){
     geom_polygon(data = eic_zeroed, aes(x=rt, y=int, fill=stdtype)) +
     geom_line(data = eic_zeroed, aes(x=rt, y=int, group=stdtype)) +
     scale_y_continuous(oob = scales::rescale_none, limits = c(0, max(eic_zeroed$int)/5)) +
+    # Consider a custom y axis label. "int" is a bit vague. could also just do a full
+    # "retention time" label on the x axis too while you're at it.
     facet_wrap(~fileid) +
     scale_fill_viridis_d(alpha = 0.7, option = "C") +
     ggtitle(label = paste(possible_stans$compound_name, collapse = ", ")) +
