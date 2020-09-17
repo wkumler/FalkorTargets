@@ -3,6 +3,7 @@
 
 
 # Setup things ----
+library(data.table)
 library(tidyverse)
 library(pbapply)
 options(dplyr.summarise.inform=F)
@@ -10,7 +11,7 @@ options(dplyr.summarise.inform=F)
 
 # Functions ----
 # stan_guesser()
-# Custom function that tries to resolve discrepancies between various metrics
+# Custom function that tries to resolve discrepancies between various metrics ## Can you be more specific here?
 # Basically a bunch of if/else statements
 # Highest priority: isotope validated (isotope_choice)
 # Next highest: if two peaks are found and two standards should be found, use RT
@@ -25,6 +26,7 @@ options(dplyr.summarise.inform=F)
 # Returns a character vector, usually a single peak but can be multiple or none
 # concatenated with a semicolon
 stan_guesser <- function(isotope_choice, mix_choice, match_choice, area_choice, rt_choice){
+  ## This is usually a good place to define all your variables.
   if(all(is.na(c(isotope_choice, mix_choice, match_choice, area_choice, rt_choice)))){
     return("No peaks found")
   }
@@ -34,6 +36,8 @@ stan_guesser <- function(isotope_choice, mix_choice, match_choice, area_choice, 
   if(!is.na(match_choice)) {
     return(match_choice)
   }
+  ## You could consider writing more documentation on what is happening in each step,
+  ## or include it all at the top.
   if(is.na(mix_choice)){
     mix_options <- NA
   } else if(!nchar(mix_choice)){
@@ -99,7 +103,7 @@ all_peaks <- real_peaks %>%
   arrange("feature", "file_name")
 all_features <- all_peaks %>%
   group_by(feature) %>%
-  summarise(mzmed=median(mz), rtmed=median(rt), avgarea=mean(M_area))
+  summarise(mzmed=median(mz), rtmed=median(rt), avgarea=mean(M_area)) 
 
 
 
@@ -136,7 +140,7 @@ stan_assignments <- all_stans %>%
   pblapply(function(stan_data){
     # dput(stan_data)
     possible_stan_features <- all_features %>%
-      filter(mzmed%between%pmppm(as.numeric(stan_data["mz"]))) %>%
+      filter(mzmed %between% pmppm(as.numeric(stan_data["mz"]))) %>%
       arrange(rtmed)
     if(!nrow(possible_stan_features)){
       return(rep(NA, 5))
@@ -151,7 +155,9 @@ stan_assignments <- all_stans %>%
       isotopo_data <- all_stans %>% 
         filter(compound_name==isotopologue)
       isotopo_features <- all_features %>%
-        filter(mzmed%between%pmppm(as.numeric(isotopo_data$mz), 5))
+        filter(mzmed %between% pmppm(as.numeric(isotopo_data$mz), 5)) 
+      ## Small syntax thing, but I think it's a lot easier to read with the spaces around the 
+      ## %between% function.
       if(nrow(isotopo_features)==1){
         isotope_choice <- possible_stan_features %>% 
           mutate(rtdiff=abs(rtmed-isotopo_features$rtmed)) %>%
@@ -168,7 +174,7 @@ stan_assignments <- all_stans %>%
                  compound_name==gsub("^D", "", isotopologue)|
                  compound_name==gsub("^L", "", isotopologue))
       isotopo_features <- all_features %>%
-        filter(mzmed%between%pmppm(as.numeric(isotopo_data$mz), 5))
+        filter(mzmed %between% pmppm(as.numeric(isotopo_data$mz), 5)) 
       isotope_choice <- possible_stan_features %>% 
         left_join(isotopo_features, by=character()) %>%
         select(-starts_with("mzmed")) %>%
@@ -242,7 +248,7 @@ stan_assignments <- all_stans %>%
     
     # If there's same number of features as expected peaks, assume 1:1 and order by RT
     possible_other_stans <- all_stans %>%
-      filter(mz%between%pmppm(stan_data$mz, 5)) %>%
+      filter(mz %between% pmppm(stan_data$mz, 5)) %>% 
       arrange(rt)
     if(nrow(possible_stan_features)==nrow(possible_other_stans)){
       match_choice <- possible_stan_features %>%
@@ -302,11 +308,14 @@ stan_assignments[(duplicated(stan_assignments$best_guess, fromLast=TRUE)|
                    !is.na(stan_assignments$best_guess), ] %>%
   split(.$best_guess)
 
+## Is the code below a direct result from checking for manual assignments? It may be good
+## to try and automate that process. Filter by those compounds that come up in the duplicate output
+## and make a function that will do the work below with manual inputs. 
 
 # Manual assignments ----
 leucine_data <- all_stans %>% filter(compound_name=="L-Leucine")
 leucine <- all_features %>%
-  filter(mzmed%between%pmppm(leucine_data$mz, 5)) %>%
+  filter(mzmed %between% pmppm(leucine_data$mz, 5)) %>%
   arrange(rtmed) %>%
   slice(2)
 stan_assignments[stan_assignments$compound_name=="L-Leucine",] <- 
@@ -314,7 +323,7 @@ stan_assignments[stan_assignments$compound_name=="L-Leucine",] <-
 
 N6_lysine_data <- all_stans %>% filter(compound_name=="N6-Acetyl-L-lysine")
 N6_lysine <- all_features %>%
-  filter(mzmed%between%pmppm(N6_lysine_data$mz, 5)) %>%
+  filter(mzmed %between% pmppm(N6_lysine_data$mz, 5)) %>%
   arrange(desc(avgarea)) %>%
   slice(1)
 stan_assignments[stan_assignments$compound_name=="N6-Acetyl-L-lysine",] <- 
@@ -322,11 +331,11 @@ stan_assignments[stan_assignments$compound_name=="N6-Acetyl-L-lysine",] <-
 
 allopurinol_data <- all_stans %>% filter(compound_name=="Allopurinol")
 allopurinol <- all_features %>%
-  filter(mzmed%between%pmppm(allopurinol_data$mz, 5)) %>%
+  filter(mzmed %between% pmppm(allopurinol_data$mz, 5)) %>%
   arrange(desc(avgarea)) %>%
   slice(1)
 hypoxanthine <- all_features %>%
-  filter(mzmed%between%pmppm(allopurinol_data$mz, 5)) %>%
+  filter(mzmed %between% pmppm(allopurinol_data$mz, 5)) %>%
   arrange(desc(avgarea)) %>%
   slice(2)
 stan_assignments[stan_assignments$compound_name=="Allopurinol",] <- 

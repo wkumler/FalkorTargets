@@ -23,10 +23,41 @@ grabSingleFileData <- function(filename){
   return(all_data)
 }
 
-ms_file_paths <- dir(r"(G:\My Drive\FalkorFactor\mzMLs\pos)",
+# RML file import suggestions --------------------------------------------------
+
+## Consider using something like the below code I added in- you always want to try and avoid 
+# desktop-specific paths for data input. You can use whatever works for you, especially as you're
+# going through your Google Drive, but just consider something beyond a normal file path.
+
+# An example of how to use the below function and loop is in the Targeted Pipeline project on the 
+# Github.
+RemoveCsv <- function(full.filepaths) {
+  # Gathers all files in given directory and drops the csv extension.
+  #
+  # Args
+  #   full.filepaths: list of files in a directory matching given patterns.
+  #
+  # Returns
+  #   no.path: list of files, with filepath and csv extension removed.
+  #
+  no.path <- substr(full.filepaths, 1, nchar(full.filepaths)-4)
+  no.ID <-   gsub("\\_.*","", no.path)
+  
+  return(no.path)
+}
+
+filenames <- RemoveCsv(list.files(path = "data_raw", pattern = file.pattern))
+
+for (i in filenames) {
+  filepath <- file.path("data_raw", paste(i,".csv", sep = ""))
+  assign(make.names(i), read.csv(filepath, stringsAsFactors = FALSE, check.names = TRUE))
+}
+# --------------------------------------------------
+
+ms_file_paths <- dir("(G:\My Drive\FalkorFactor\mzMLs\pos)",
                      pattern = ".mzML",
                      full.names = TRUE) %>%
-  normalizePath() %>%
+  normalizePath() %>% # This is a cool function, haven't heard of it before.
   `[`(!grepl("Fullneg|Fullpos|QC-KM1906", x = .)) %>%
   `[`(!grepl("DDApos", x = .)) %>%
   `[`(!grepl("180205", x = .)) %>%
